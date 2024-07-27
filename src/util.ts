@@ -8,7 +8,7 @@ import unzipper from "unzipper";
 import chalk from "chalk";
 import ProgressBar from "progress";
 
-import { domain, installLocation } from "./config.js";
+import { api_domain, installLocation } from "./config.js";
 
 function jsonToLua(jsonData: object): string {
     const luaData = Object.entries(jsonData)
@@ -19,7 +19,7 @@ function jsonToLua(jsonData: object): string {
 
 async function downloadPackage(packageName: string, version: string, packageDir: string) {
     try {
-        const url = `${domain}/download/${packageName}@${version}`;
+        const url = `${api_domain}/download/${packageName}@${version}`;
         const response = await axios.get(url, { responseType: 'stream' });
 
         if (!fs.existsSync(packageDir)) fs.mkdirSync(packageDir, { recursive: true });
@@ -67,7 +67,7 @@ async function unzipPackage(zipPath: string, packageDir: string) {
 
 async function getPackageManifest(packageName: string, version: string, packageDir: string) {
     try {
-        const url = `${domain}/manifest/${packageName}@${version}`;
+        const url = `${api_domain}/manifest/${packageName}@${version}`;
         const response = await axios.get(url);
 
         if (!fs.existsSync(packageDir)) fs.mkdirSync(packageDir, { recursive: true });
@@ -108,7 +108,7 @@ async function checkPackageUpdate(packageName: string) {
         const localManifestMatch = localManifestContent.match(/version = "([\d.]+)"/);
         const localVersion = localManifestMatch ? localManifestMatch[1] : null;
 
-        const url = `${domain}/manifest/${packageName}@latest`;
+        const url = `${api_domain}/manifest/${packageName}@latest`;
         const response = await axios.get(url);
         const remoteVersion = response.data.version;
 
@@ -145,7 +145,7 @@ async function uninstallPackage(packageName: string) {
 
 async function getLatestVersion(packageName: string): Promise<string | null> {
     try {
-        const url = `${domain}/latest-version/${packageName}`;
+        const url = `${api_domain}/latest-version/${packageName}`;
         const response = await axios.get(url);
         return response.data.version || null;
     } catch (error) {
