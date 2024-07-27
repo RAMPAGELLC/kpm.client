@@ -149,6 +149,13 @@ program
         }
     });
 
+program.command('get-path')
+    .description('Get the current installation location for packages.')
+    .action(() => {
+        console.log(chalk.green(`Current installation location: ${path.join(process.cwd(), installLocation)}`));
+    });
+
+
 program.parse(process.argv);
 
 if (!process.argv.slice(2).length) program.outputHelp();
