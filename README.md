@@ -7,13 +7,20 @@ First, ensure you have Node.js and npm installed. Then, install the required pac
 ## How do I fix PowerShell Execution Policy?
 *Documentation soon.*
 
-## How do I change KPM Installation location?
-On Windows Command Prompt, use:
+## Configuration
+### Setting the Installation Path
+The set-path command allows you to set the installation location for packages. By default, packages are installed to Knight/Packages/library.
+
 ```
-set KPM_INSTALL_LOCATION=C:\path\to\your\desired\location
+kpm set-path <path>
+```
+**Example:**
+
+```
+kpm set-path /custom-path-for-kpm/packages
 ```
 
-By Default its: current_directory/default_path_to_knight_library
+This command sets the installation location for packages to /custom-path-for-kpm/packages.
 
 ## Update KPM.client
 ```
@@ -132,3 +139,4 @@ The software is provided "as is," without any warranty of any kind. We are not r
 * ``chalk``
 * ``progress``
 * ``open``
+* ``dotenv``

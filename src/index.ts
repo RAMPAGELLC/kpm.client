@@ -9,8 +9,8 @@ import path from 'path';
 import fs from 'fs';
 import open from 'open';
 
-import { installLocation } from './config.js';
 import packageJson from '../package.json' assert { type: 'json' };
+import { installLocation, setInstallLocation } from './config.js';
 
 import {
     downloadPackage,
@@ -52,12 +52,44 @@ const program = new Command();
 
 program
     .version(packageJson.version)
-    .description("Knight Package Manager CLI")
-    .option("-i, --install <package> <version?>", "Install a package.")
-    .option("-u, --uninstall <package>", "Uninstall a package.")
-    .option("-up, --update <package?>", "Update all or a specific package.")
-    .option("-o, --output-manifest <package>", "Output the manifest of a package.")
-    .option("-c, --check-update <package>", "Check if a new version of a package is available.");
+    .description('Knight Package Manager CLI')
+
+
+program
+    .command('install <package> [version]')
+    .description('Install a package.')
+    .action((pkg, version = 'latest') => {
+        downloadPackage(pkg, version).then(() => getPackageManifest(pkg, version));
+    });
+
+program
+    .command('uninstall <package>')
+    .description('Uninstall a package.')
+    .action((pkg) => {
+        console.log(`Uninstalling package ${pkg}...`);
+        uninstallPackage(pkg);
+    });
+
+program
+    .command('update [package]')
+    .description('Update all or a specific package.')
+    .action((pkg) => {
+        updatePackage(pkg || undefined);
+    });
+
+program
+    .command('output-manifest <package>')
+    .description('Output the manifest of a package.')
+    .action((pkg) => {
+        outputPackageManifest(pkg);
+    });
+
+program
+    .command('check-update <package>')
+    .description('Check if a new version of a package is available.')
+    .action((pkg) => {
+        checkPackageUpdate(pkg);
+    });
 
 program
     .command('publish')
@@ -75,6 +107,18 @@ program.command('count')
     .action(() => {
         const packageCount = getInstalledPackages().length;
         console.log(chalk.green(`Number of installed packages: ${packageCount}`));
+    });
+
+program.command('set-path <path>')
+    .description('Set the installation location for packages.')
+    .action((path) => {
+        try {
+            setInstallLocation(path);
+            console.log(chalk.green(`Installation location set to ${path}`));
+        } catch (error) {
+            const err = error as Error;
+            console.error(chalk.red(`Failed to set installation location: ${err.message}`));
+        }
     });
 
 program.command('check-updates')
@@ -111,19 +155,23 @@ if (!process.argv.slice(2).length) program.outputHelp();
 
 const options = program.opts();
 
-if (options.version) console.log(`kpm version ${packageJson.version}`);
-if (options.update) updatePackage(options.update || undefined);
-if (options.outputManifest) outputPackageManifest(options.outputManifest);
-if (options.checkUpdate) checkPackageUpdate(options.checkUpdate);
-
 if (options.install) {
     const [packageName, version = 'latest'] = options.install.split('@');
-    const packageDir = path.join(process.cwd(), installLocation, packageName);
-    downloadPackage(packageName, version, packageDir).then(() => getPackageManifest(packageName, version, packageDir));
+    downloadPackage(packageName, version).then(() => getPackageManifest(packageName, version));
 }
 
 if (options.uninstall) {
-    const packageName = options.uninstall;
-    console.log(`Uninstalling package ${packageName}...`);
-    uninstallPackage(packageName);
+    uninstallPackage(options.uninstall);
+}
+
+if (options.update) {
+    updatePackage(options.update || undefined);
+}
+
+if (options.outputManifest) {
+    outputPackageManifest(options.outputManifest);
+}
+
+if (options.checkUpdate) {
+    checkPackageUpdate(options.checkUpdate);
 }
