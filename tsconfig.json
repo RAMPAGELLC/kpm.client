@@ -3,13 +3,12 @@
     "rootDir": "./src",
     "outDir": "./dist",
     "strict": true,
-    "target": "ES6",
-    "module": "commonjs",
+    "module": "ESNext",
+    "target": "ES2022",
     "sourceMap": true,
     "esModuleInterop": true,
-    "skipLibCheck": true,
-    "forceConsistentCasingInFileNames": true,
-    "moduleResolution": "node"
+    "moduleResolution": "node",
+    "resolveJsonModule": true
   },
   "include": ["src"]
 }

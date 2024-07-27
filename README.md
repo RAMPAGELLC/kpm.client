@@ -1,11 +1,24 @@
 # KPM Client
 KPM Client is a CLI written in TypeScript for the popular Roblox Framework Knight by RAMPAGE Interactive. You can use the KPM Client to install Knight packages such as Maid.
 
-> [!CAUTION]
-> KPM Server-side is not completed nor operational, same with the KPM Client. The KPM Client is actively under development by RAMPAGE Interactive and contributors. It is not ready for usage.
-
 # Usage
 First, ensure you have Node.js and npm installed. Then, install the required packages:
+
+## How do I fix PowerShell Execution Policy?
+*Documentation soon.*
+
+## How do I change KPM Installation location?
+On Windows Command Prompt, use:
+```
+set KPM_INSTALL_LOCATION=C:\path\to\your\desired\location
+```
+
+By Default its: current_directory/default_path_to_knight_library
+
+## Update KPM.client
+```
+kpm npm
+```
 
 ## Install KPM.client
 ```
@@ -118,3 +131,4 @@ The software is provided "as is," without any warranty of any kind. We are not r
 * ``unzipper``
 * ``chalk``
 * ``progress``
+* ``open``

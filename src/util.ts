@@ -8,20 +8,19 @@ import unzipper from "unzipper";
 import chalk from "chalk";
 import ProgressBar from "progress";
 
-import { domain } from "./config";
+import { domain, installLocation } from "./config.js";
 
-export function jsonToLua(jsonData: object): string {
+function jsonToLua(jsonData: object): string {
     const luaData = Object.entries(jsonData)
         .map(([key, value]) => `${key} = ${JSON.stringify(value)}`)
         .join(',\n');
     return `return {\n${luaData}\n}`;
 }
 
-export async function downloadPackage(packageName: string, version: string) {
+async function downloadPackage(packageName: string, version: string, packageDir: string) {
     try {
         const url = `${domain}/download/${packageName}@${version}`;
         const response = await axios.get(url, { responseType: 'stream' });
-        const packageDir = path.join(process.cwd(), 'Knight', 'Packages', 'library', packageName);
 
         if (!fs.existsSync(packageDir)) fs.mkdirSync(packageDir, { recursive: true });
         
@@ -53,7 +52,7 @@ export async function downloadPackage(packageName: string, version: string) {
     }
 }
 
-export async function unzipPackage(zipPath: string, packageDir: string) {
+async function unzipPackage(zipPath: string, packageDir: string) {
     try {
         fs.createReadStream(zipPath)
             .pipe(unzipper.Extract({ path: packageDir }))
@@ -66,16 +65,15 @@ export async function unzipPackage(zipPath: string, packageDir: string) {
     }
 }
 
-export async function getPackageManifest(packageName: string, version: string) {
+async function getPackageManifest(packageName: string, version: string, packageDir: string) {
     try {
         const url = `${domain}/manifest/${packageName}@${version}`;
         const response = await axios.get(url);
-        const manifestDir = path.join(process.cwd(), 'Knight', 'Packages', 'library', packageName);
-        if (!fs.existsSync(manifestDir)) {
-            fs.mkdirSync(manifestDir, { recursive: true });
-        }
+
+        if (!fs.existsSync(packageDir)) fs.mkdirSync(packageDir, { recursive: true });
+        
         const manifestLua = jsonToLua(response.data);
-        fs.writeFileSync(path.join(manifestDir, 'manifest.lua'), manifestLua);
+        fs.writeFileSync(path.join(packageDir, 'manifest.lua'), manifestLua);
         console.log(chalk.green(`Manifest for ${packageName}@${version} written to manifest.lua`));
     } catch (error) {
         if (axios.isAxiosError(error)) {
@@ -86,7 +84,7 @@ export async function getPackageManifest(packageName: string, version: string) {
     }
 }
 
-export async function outputPackageManifest(packageName: string) {
+async function outputPackageManifest(packageName: string) {
     try {
         const manifestPath = path.join(process.cwd(), 'Knight', 'Packages', 'library', packageName, 'manifest.lua');
         if (fs.existsSync(manifestPath)) {
@@ -100,7 +98,7 @@ export async function outputPackageManifest(packageName: string) {
     }
 }
 
-export async function checkPackageUpdate(packageName: string) {
+async function checkPackageUpdate(packageName: string) {
     try {
         const localManifestPath = path.join(process.cwd(), 'Knight', 'Packages', 'library', packageName, 'manifest.lua');
         
@@ -130,7 +128,7 @@ export async function checkPackageUpdate(packageName: string) {
     }
 }
 
-export async function uninstallPackage(packageName: string) {
+async function uninstallPackage(packageName: string) {
     try {
         const packageDir = path.join(process.cwd(), 'Knight', 'Packages', 'library', packageName);
 
@@ -145,19 +143,102 @@ export async function uninstallPackage(packageName: string) {
     }
 }
 
-export async function updatePackage(packageName?: string) {
-    if (packageName) {
-        console.log(chalk.blue(`Updating package ${packageName}...`));
-        await downloadPackage(packageName, 'latest');
-        await getPackageManifest(packageName, 'latest');
-    } else {
-        console.log(chalk.blue(`Updating all packages...`));
-        const packagesDir = path.join(process.cwd(), 'Knight', 'Packages', 'library');
-        const packageNames = fs.readdirSync(packagesDir).filter(name => fs.lstatSync(path.join(packagesDir, name)).isDirectory());
+async function getLatestVersion(packageName: string): Promise<string | null> {
+    try {
+        const url = `${domain}/latest-version/${packageName}`;
+        const response = await axios.get(url);
+        return response.data.version || null;
+    } catch (error) {
+        if (error instanceof Error) {
+            console.error(`Failed to fetch latest version for ${packageName}: ${error.message}`);
+        } else {
+            console.error(`Failed to fetch latest version for ${packageName}: Unknown error`);
+        }
 
-        for (const name of packageNames) {
-            await downloadPackage(name, 'latest');
-            await getPackageManifest(name, 'latest');
+        return null;
+    }
+}
+
+function getCurrentVersion(packageDir: string): string {
+    try {
+        const manifestPath = path.join(packageDir, 'manifest.json');
+        if (fs.existsSync(manifestPath)) {
+            const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
+            return manifest.version || 'unknown';
+        }
+        return 'unknown';
+    } catch (error) {
+        if (error instanceof Error) {
+            console.error(`Failed to read current version for ${packageDir}: ${error.message}`);
+        } else {
+            console.error(`Failed to read current version for ${packageDir}: Unknown error`);
+        }
+        
+        return 'unknown';
+    }
+}
+
+async function updatePackage(packageName?: string) {
+    try {
+        const baseDir = path.join(process.cwd(), installLocation);
+
+        if (packageName) {
+            // Update a specific package
+            const packageDir = path.join(baseDir, packageName);
+            
+            if (!fs.existsSync(packageDir)) {
+                console.error(`Package ${packageName} not found.`);
+                return;
+            }
+
+            // Get the latest version of the package
+            const latestVersion = await getLatestVersion(packageName);
+            const currentVersion = getCurrentVersion(packageDir);
+
+            if (latestVersion && latestVersion !== currentVersion) {
+                console.log(`Updating ${packageName} from version ${currentVersion} to ${latestVersion}...`);
+                await downloadPackage(packageName, latestVersion, packageDir);
+                console.log(`Package ${packageName} updated successfully.`);
+            } else {
+                console.log(`Package ${packageName} is already up-to-date.`);
+            }
+        } else {
+            // Update all packages
+            const packageDirs = fs.readdirSync(baseDir);
+
+            for (const dir of packageDirs) {
+                const packageDir = path.join(baseDir, dir);
+
+                if (fs.statSync(packageDir).isDirectory()) {
+                    const latestVersion = await getLatestVersion(dir);
+                    const currentVersion = getCurrentVersion(packageDir);
+
+                    if (latestVersion && latestVersion !== currentVersion) {
+                        console.log(`Updating ${dir} from version ${currentVersion} to ${latestVersion}...`);
+                        await downloadPackage(dir, latestVersion, packageDir);
+                        console.log(`Package ${dir} updated successfully.`);
+                    } else {
+                        console.log(`Package ${dir} is already up-to-date.`);
+                    }
+                }
+            }
+        }
+    } catch (error) {
+        if (error instanceof Error) {
+            console.error(`Failed to update package ${packageName}: ${error.message}`);
+        } else {
+            console.error(`Failed to update package ${packageName}: Unknown error`);
         }
     }
 }
+
+export {
+    downloadPackage,
+    getPackageManifest,
+    uninstallPackage,
+    updatePackage,
+    outputPackageManifest,
+    checkPackageUpdate,
+    getLatestVersion,
+    getCurrentVersion
+};
