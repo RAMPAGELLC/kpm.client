@@ -1,0 +1,1 @@
+export const domain = "https://kpm.metatable.dev/api/v1"
