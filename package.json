@@ -1,10 +1,11 @@
 {
   "name": "kpm.client",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "Knight Package Manager CLI",
   "main": "dist/index.js",
   "bin": {
-    "kpm": "./dist/index.js"
+    "kpm": "./kpm.cmd",
+    "knight": "./kpm.cmd"
   },
   "type": "module",
   "scripts": {
