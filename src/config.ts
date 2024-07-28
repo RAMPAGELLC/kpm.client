@@ -7,8 +7,8 @@ import path from 'path';
 
 dotenv.config();
 
-export const domain = "https://kpm.metatable.dev";
-export const api_domain = `${domain}/api/v1`;
+export const ROOT_DOMAIN = "https://kpm.metatable.dev";
+export const API_DOMAIN = `${ROOT_DOMAIN}/api/v1`;
 
 export const defaultInstallLocation = 'knight_library';
 const configFilePath = path.join(process.cwd(), 'kpm.config.json');

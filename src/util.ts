@@ -2,7 +2,7 @@ import axios, { AxiosResponse } from 'axios';
 import fs from 'fs';
 import path from 'path';
 import unzipper from 'unzipper';
-import { installLocation, domain } from './config.js';
+import { installLocation, API_DOMAIN } from './config.js';
 import chalk from 'chalk';
 import ProgressBar from 'progress';
 
@@ -16,7 +16,10 @@ export function jsonToLua(jsonData: object): string {
 
 export async function downloadPackage(packageName: string, version: string) {
     try {
-        const url = `${domain}/download/${packageName}@${version}`;
+        const manifestResponse = await axios.get(`${API_DOMAIN}/packages/release/${packageName}/${version}`);
+        const manifestKey = manifestResponse.data.data.manifestKey;
+
+        const url = `${API_DOMAIN}/packages/download/${manifestKey}`;
         const response = await axios.get(url, { responseType: 'stream' });
         const totalLength = response.headers['content-length'];
 
@@ -80,14 +83,15 @@ export async function unzipPackage(zipPath: string, packageDir: string) {
 
 export async function getPackageManifest(packageName: string, version: string) {
     try {
-        const url = `${domain}/manifest/${packageName}@${version}`;
-        const response: AxiosResponse = await axios.get(url);
-        const packageDir = path.join(process.cwd(), installLocation, packageName);
-        if (!fs.existsSync(packageDir)) {
-            fs.mkdirSync(packageDir, { recursive: true });
-        }
+        const response = await axios.get(`${API_DOMAIN}/packages/release/${packageName}/${version}`);
+        const manifest = response.data.data.manifest;
+        const manifestDir = path.join(process.cwd(), installLocation, packageName);
+
+        if (!fs.existsSync(manifestDir)) fs.mkdirSync(manifestDir, { recursive: true });
+
         const manifestLua = jsonToLua(response.data);
-        fs.writeFileSync(path.join(packageDir, 'manifest.lua'), manifestLua);
+        fs.writeFileSync(path.join(manifestDir, 'manifest.lua'), manifestLua);
+
         console.log(chalk.green(`Manifest for ${packageName}@${version} written to manifest.lua`));
     } catch (error) {
         const err = error as Error;
@@ -111,16 +115,8 @@ export function getCurrentVersion(packageDir: string): string {
 
 export async function getLatestVersion(packageName: string): Promise<string | null> {
     try {
-        const url = `${domain}/latest-version/${packageName}`;
-        const response = await axios.get(url);
-        const data = response.data;
-
-        if (typeof data === 'object' && data !== null && 'version' in data) {
-            return data.version as string;
-        } else {
-            console.error(chalk.red(`Invalid data format received for ${packageName}`));
-            return null;
-        }
+        const response = await axios.get(`${API_DOMAIN}/packages/releases/${packageName}`);
+        return response.data.versions[0].version;
     } catch (error) {
         const err = error as Error;
         console.error(chalk.red(`Failed to fetch latest version for ${packageName}: ${err.message}`));
