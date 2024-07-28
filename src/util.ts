@@ -16,17 +16,23 @@ export function jsonToLua(jsonData: object): string {
 
 export async function downloadPackage(packageName: string, version: string) {
     try {
-        const manifestResponse = await axios.get(`${API_DOMAIN}/packages/release/${packageName}/${version}`);
-        const manifestKey = manifestResponse.data.data.manifestKey;
+        let manifestKey = "1.0.0";
+
+        if (version != "latest") {
+            const manifestResponse = await axios.get(`${API_DOMAIN}/packages/release/${packageName}/${version}`);
+            manifestKey = manifestResponse.data.data.manifestKey;
+        } else {
+            const manifestResponse = await axios.get(`${API_DOMAIN}/packages/releases/${packageName}`);
+            manifestKey = manifestResponse.data.package.latestManifestKey;
+        }
 
         const url = `${API_DOMAIN}/packages/download/${manifestKey}`;
         const response = await axios.get(url, { responseType: 'stream' });
         const totalLength = response.headers['content-length'];
 
         const packageDir = path.join(process.cwd(), installLocation, packageName);
-        if (!fs.existsSync(packageDir)) {
-            fs.mkdirSync(packageDir, { recursive: true });
-        }
+        if (!fs.existsSync(packageDir)) fs.mkdirSync(packageDir, { recursive: true });
+
         const zipPath = path.join(packageDir, `${packageName}-${version}.zip`);
         const writer = fs.createWriteStream(zipPath);
 
@@ -180,7 +186,7 @@ export async function updatePackage(packageName?: string) {
 
 export function uninstallPackage(packageName: string): void {
     console.log(`Uninstalling package ${packageName}...`);
-    
+
     const packageDir = path.join(process.cwd(), installLocation, packageName);
 
     if (fs.existsSync(packageDir)) {
