@@ -9,7 +9,8 @@ import path from 'path';
 import fs from 'fs';
 import open from 'open';
 
-import packageJson from '../package.json' assert { type: 'json' };
+//import packageJson from '../package.json' assert { type: 'json' };
+import { version as kpm_current_version } from './version';
 import { installLocation, setInstallLocation, setUnsafe, unsafeMode } from './config.js';
 
 import {
@@ -51,7 +52,7 @@ console.log("Written by vq9o and Contributor(s).");
 const program = new Command();
 
 program
-    .version(packageJson.version)
+    .version(kpm_current_version)
     .description('Knight Package Manager CLI')
 
 

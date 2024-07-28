@@ -9,7 +9,9 @@
   },
   "type": "module",
   "scripts": {
-    "build": "npx tsc",
+    "prebuild": "node -p \"'export const version = ' + JSON.stringify(require('./package.json').version) + ';'\" > src/version.ts",
+    "build": "npm run prebuild && npx tsc",
+    "build-exe": "npm run build",
     "start": "node dist/index.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
