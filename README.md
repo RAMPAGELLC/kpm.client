@@ -17,13 +17,14 @@ See https://github.com/RAMPAGELLC/kpm.client/blob/main/DOCUMENTATION.md
 The software is provided "as is," without any warranty of any kind. We are not responsible for any damages to your project or system caused by the use or misuse of this software. Use it at your own risk.
 
 # Dependacies:
-* ``figlet``
-* ``commander``
-* ``axios``
-* ``fs``
-* ``path``
-* ``unzipper``
-* ``chalk``
-* ``progress``
-* ``open``
-* ``dotenv``
+* ``figlet``; Used for KPM text
+* ``commander``; Used for CLI command parsing
+* ``axios``;  Used for API requests
+* ``fs``; Used for installation/uninstallation of packages and getting manifests
+* ``path``; Used for installation/uninstallation of packages and getting manifests
+* ``unzipper``; Used for installation/uninstallation of packages and getting manifests
+* ``chalk``; Used to spark up CLI
+* ``progress``; Progress bar for operations
+* ``open``; Used to open URL in browser to publish packages and authenticate
+* ``express``; Used for authentication callback
+* ``config``; Used to store configuration

@@ -5,6 +5,7 @@ import unzipper from 'unzipper';
 import { installLocation, API_DOMAIN, unsafeMode } from './config.js';
 import chalk from 'chalk';
 import ProgressBar from 'progress';
+import config from 'config';
 
 // Convert JSON data to a Lua table
 export function jsonToLua(jsonData: object): string {
@@ -16,9 +17,16 @@ export function jsonToLua(jsonData: object): string {
 
 export async function downloadPackage(packageName: string, version: string) {
     try {
+        const authKey = config.get('auth.key');
+        const authHeader = authKey && authKey !== "" ? `Bearer ${authKey}` : 'public';
+
         if (version === 'latest') {
             try {
-                const latestResponse = await axios.get(`${API_DOMAIN}/packages/releases/${packageName}`);
+                const latestResponse = await axios.get(`${API_DOMAIN}/packages/releases/${packageName}`, {
+                    headers: {
+                        'Authorization': `Bearer ${authHeader}`
+                    }
+                });
                 const latestManifestKey: string = latestResponse.data.package.latestManifestKey;
 
                 latestResponse.data.versions.forEach((versionItem: any) => {
@@ -37,11 +45,21 @@ export async function downloadPackage(packageName: string, version: string) {
 
         if (unsafeMode) console.log(chalk.bgYellow(`UNSAFE MODE IS ENABLED! UNSAFE MODE LETS YOU DOWNLOAD VERSIONS FLAGGED AS POTENTIONALLY UNSAFE, YOU MAY ACCIDENTALLY ADD MALWARE. YOU HAVE BEEN WARNED!`));
 
-        const manifestResponse = await axios.get(`${API_DOMAIN}/packages/release/${packageName}/${version}`);
+        const manifestResponse = await axios.get(`${API_DOMAIN}/packages/release/${packageName}/${version}`, {
+            headers: {
+                'Authorization': `Bearer ${authHeader}`
+            }
+        });
+
         const manifestKey = manifestResponse.data.data.manifestKey;
 
         const url = `${API_DOMAIN}/packages/download/${manifestKey}${unsafeMode ? '?KPM_UNSAFE_MODE=true' : ''}`;
-        const response = await axios.get(url, { responseType: 'stream' });
+        const response = await axios.get(url, {
+            headers: {
+                'Authorization': `Bearer ${authHeader}`
+            },
+            responseType: 'stream'
+        });
         const totalLength = response.headers['content-length'];
 
         const packageDir = path.join(process.cwd(), installLocation, packageName);
@@ -103,9 +121,16 @@ export async function unzipPackage(zipPath: string, packageDir: string) {
 
 export async function getPackageManifest(packageName: string, version: string) {
     try {
+        const authKey = config.get('auth.key');
+        const authHeader = authKey && authKey !== "" ? `Bearer ${authKey}` : 'public';
+
         if (version === 'latest') {
             try {
-                const latestResponse = await axios.get(`${API_DOMAIN}/packages/releases/${packageName}`);
+                const latestResponse = await axios.get(`${API_DOMAIN}/packages/releases/${packageName}`, {
+                    headers: {
+                        'Authorization': `Bearer ${authHeader}`
+                    }
+                });
                 const latestManifestKey: string = latestResponse.data.package.latestManifestKey;
 
                 latestResponse.data.versions.forEach((versionItem: any) => {
@@ -122,7 +147,11 @@ export async function getPackageManifest(packageName: string, version: string) {
 
         if (version === "latest") console.error(`Failed to fetch latest version for package ${packageName}: Failed to find latest version via Manifest ID.`);
 
-        const response = await axios.get(`${API_DOMAIN}/packages/release/${packageName}/${version}`);
+        const response = await axios.get(`${API_DOMAIN}/packages/release/${packageName}/${version}`, {
+            headers: {
+                'Authorization': `Bearer ${authHeader}`
+            }
+        });
         const manifest = response.data.data.manifest;
         const manifestDir = path.join(process.cwd(), installLocation, packageName);
 
@@ -154,7 +183,14 @@ export function getCurrentVersion(packageDir: string): string {
 
 export async function getLatestVersion(packageName: string): Promise<string | null> {
     try {
-        const response = await axios.get(`${API_DOMAIN}/packages/releases/${packageName}`);
+        const authKey = config.get('auth.key');
+        const authHeader = authKey && authKey !== "" ? `Bearer ${authKey}` : 'public';
+        
+        const response = await axios.get(`${API_DOMAIN}/packages/releases/${packageName}`, {
+            headers: {
+                'Authorization': `Bearer ${authHeader}`
+            }
+        });
         return response.data.versions[0].version;
     } catch (error) {
         const err = error as Error;

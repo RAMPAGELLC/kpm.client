@@ -1,11 +1,8 @@
 // Copyright (c) 2024 RAMPAGE Interactive
 // Written by vq9o
 
-import * as dotenv from 'dotenv';
 import fs from 'fs';
 import path from 'path';
-
-dotenv.config();
 
 export const ROOT_DOMAIN = "https://kpm.metatable.dev";
 export const API_DOMAIN = `${ROOT_DOMAIN}/api/v1`;

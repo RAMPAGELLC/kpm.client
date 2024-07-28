@@ -8,6 +8,8 @@ import chalk from 'chalk';
 import path from 'path';
 import fs from 'fs';
 import open from 'open';
+import express from 'express';
+import config from 'config';
 
 //import packageJson from '../package.json' assert { type: 'json' };
 import { version as kpm_current_version } from './version';
@@ -161,6 +163,37 @@ program.command('unsafemode')
     .action(() => {
         setUnsafe(!unsafeMode);
         console.log(chalk.yellow(`Unsafe mode is now ${unsafeMode ? 'enabled' : 'disabled'}.`));
+    });
+
+program
+    .command('login')
+    .description('Log in to KPM and save the authentication key.')
+    .action(() => {
+        const app = express();
+        const port = 3000;
+
+        app.get('/login_callback', async (req, res) => {
+            const authKey = req.query.key;
+            
+            if (authKey) {
+                config.util.setModuleDefaults('auth', { key: authKey });
+                res.send('Login successful! You can close this window.');
+                console.log(chalk.green('Login successful! Authentication key saved.'));
+            } else {
+                res.send('Login failed! No key found.');
+                console.log(chalk.red('Login failed! No key found.'));
+            }
+
+            server.close();
+        });
+
+        const server = app.listen(port, () => {
+            const loginUrl = `https://kpm.metatable.dev/api/v1/external_login?callback=http://localhost:${port}/login_callback`;
+            console.log(chalk.blue(`Opening the login page at ${loginUrl}...`));
+            open(loginUrl).catch((error) => {
+                console.error(chalk.red(`Failed to open URL: ${error.message}`));
+            });
+        });
     });
 
 program.parse(process.argv);
