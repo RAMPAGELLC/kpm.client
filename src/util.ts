@@ -16,15 +16,27 @@ export function jsonToLua(jsonData: object): string {
 
 export async function downloadPackage(packageName: string, version: string) {
     try {
-        let manifestKey = "1.0.0";
+        if (version === 'latest') {
+            try {
+                const latestResponse = await axios.get(`${API_DOMAIN}/packages/releases/${packageName}`);
+                const latestManifestKey: string = latestResponse.data.package.latestManifestKey;
 
-        if (version != "latest") {
-            const manifestResponse = await axios.get(`${API_DOMAIN}/packages/release/${packageName}/${version}`);
-            manifestKey = manifestResponse.data.data.manifestKey;
-        } else {
-            const manifestResponse = await axios.get(`${API_DOMAIN}/packages/releases/${packageName}`);
-            manifestKey = manifestResponse.data.package.latestManifestKey;
+                latestResponse.data.versions.forEach((versionItem: any) => {
+                    if (versionItem.manifestKey === latestManifestKey) {
+                        version = versionItem.version;
+                        return;
+                    }
+                });
+            } catch (error) {
+                console.error(`Failed to fetch latest version for package ${packageName}: ${error instanceof Error ? error.message : error}`);
+                return;
+            }
         }
+
+        if (version === "latest") console.error(`Failed to fetch latest version for package ${packageName}: Failed to find latest version via Manifest ID.`);
+
+        const manifestResponse = await axios.get(`${API_DOMAIN}/packages/release/${packageName}/${version}`);
+        const manifestKey = manifestResponse.data.data.manifestKey;
 
         const url = `${API_DOMAIN}/packages/download/${manifestKey}`;
         const response = await axios.get(url, { responseType: 'stream' });
@@ -89,6 +101,25 @@ export async function unzipPackage(zipPath: string, packageDir: string) {
 
 export async function getPackageManifest(packageName: string, version: string) {
     try {
+        if (version === 'latest') {
+            try {
+                const latestResponse = await axios.get(`${API_DOMAIN}/packages/releases/${packageName}`);
+                const latestManifestKey: string = latestResponse.data.package.latestManifestKey;
+
+                latestResponse.data.versions.forEach((versionItem: any) => {
+                    if (versionItem.manifestKey === latestManifestKey) {
+                        version = versionItem.version;
+                        return;
+                    }
+                });
+            } catch (error) {
+                console.error(`Failed to fetch latest version for package ${packageName}: ${error instanceof Error ? error.message : error}`);
+                return;
+            }
+        }
+
+        if (version === "latest") console.error(`Failed to fetch latest version for package ${packageName}: Failed to find latest version via Manifest ID.`);
+        
         const response = await axios.get(`${API_DOMAIN}/packages/release/${packageName}/${version}`);
         const manifest = response.data.data.manifest;
         const manifestDir = path.join(process.cwd(), installLocation, packageName);
