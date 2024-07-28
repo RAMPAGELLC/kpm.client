@@ -174,7 +174,7 @@ program
 
         app.get('/login_callback', async (req, res) => {
             const authKey = req.query.key;
-            
+
             if (authKey) {
                 config.util.setModuleDefaults('auth', { key: authKey });
                 res.send('Login successful! You can close this window.');
@@ -188,7 +188,7 @@ program
         });
 
         const server = app.listen(port, () => {
-            const loginUrl = `https://kpm.metatable.dev/api/v1/external_login?callback=http://localhost:${port}/login_callback`;
+            const loginUrl = `https://kpm.metatable.dev/api/v1/oauth/external_login`;
             console.log(chalk.blue(`Opening the login page at ${loginUrl}...`));
             open(loginUrl).catch((error) => {
                 console.error(chalk.red(`Failed to open URL: ${error.message}`));
