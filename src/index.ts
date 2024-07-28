@@ -10,7 +10,7 @@ import fs from 'fs';
 import open from 'open';
 
 import packageJson from '../package.json' assert { type: 'json' };
-import { installLocation, setInstallLocation } from './config.js';
+import { installLocation, setInstallLocation, setUnsafe, unsafeMode } from './config.js';
 
 import {
     downloadPackage,
@@ -155,6 +155,12 @@ program.command('get-path')
         console.log(chalk.green(`Current installation location: ${path.join(process.cwd(), installLocation)}`));
     });
 
+program.command('unsafemode')
+    .description('Enable or disable unsafe mode.')
+    .action(() => {
+        setUnsafe(!unsafeMode);
+        console.log(chalk.yellow(`Unsafe mode is now ${unsafeMode ? 'enabled' : 'disabled'}.`));
+    });
 
 program.parse(process.argv);
 

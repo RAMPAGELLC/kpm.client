@@ -2,7 +2,7 @@ import axios, { AxiosResponse } from 'axios';
 import fs from 'fs';
 import path from 'path';
 import unzipper from 'unzipper';
-import { installLocation, API_DOMAIN } from './config.js';
+import { installLocation, API_DOMAIN, unsafeMode } from './config.js';
 import chalk from 'chalk';
 import ProgressBar from 'progress';
 
@@ -35,10 +35,12 @@ export async function downloadPackage(packageName: string, version: string) {
 
         if (version === "latest") console.error(`Failed to fetch latest version for package ${packageName}: Failed to find latest version via Manifest ID.`);
 
+        if (unsafeMode) console.log(chalk.bgYellow(`UNSAFE MODE IS ENABLED! UNSAFE MODE LETS YOU DOWNLOAD VERSIONS FLAGGED AS POTENTIONALLY UNSAFE, YOU MAY ACCIDENTALLY ADD MALWARE. YOU HAVE BEEN WARNED!`));
+
         const manifestResponse = await axios.get(`${API_DOMAIN}/packages/release/${packageName}/${version}`);
         const manifestKey = manifestResponse.data.data.manifestKey;
 
-        const url = `${API_DOMAIN}/packages/download/${manifestKey}`;
+        const url = `${API_DOMAIN}/packages/download/${manifestKey}${unsafeMode ? '?KPM_UNSAFE_MODE=true' : ''}`;
         const response = await axios.get(url, { responseType: 'stream' });
         const totalLength = response.headers['content-length'];
 
@@ -119,7 +121,7 @@ export async function getPackageManifest(packageName: string, version: string) {
         }
 
         if (version === "latest") console.error(`Failed to fetch latest version for package ${packageName}: Failed to find latest version via Manifest ID.`);
-        
+
         const response = await axios.get(`${API_DOMAIN}/packages/release/${packageName}/${version}`);
         const manifest = response.data.data.manifest;
         const manifestDir = path.join(process.cwd(), installLocation, packageName);
