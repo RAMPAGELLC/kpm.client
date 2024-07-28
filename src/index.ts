@@ -12,7 +12,7 @@ import express from 'express';
 import config from 'config';
 
 //import packageJson from '../package.json' assert { type: 'json' };
-import { version as kpm_current_version } from './version';
+import { version as kpm_current_version } from './version.js';
 import { installLocation, setInstallLocation, setUnsafe, unsafeMode } from './config.js';
 
 import {
